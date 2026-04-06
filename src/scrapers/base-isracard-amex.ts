@@ -20,6 +20,7 @@ import { BaseScraperWithBrowser } from './base-scraper-with-browser';
 import { ScraperErrorTypes } from './errors';
 import { type ScraperOptions, type ScraperScrapingResult } from './interface';
 
+
 const RATE_LIMIT = {
   SLEEP_BETWEEN: 2500, // Sweet spot: 2.5s base delay (randomized up to 3s)
   TRANSACTIONS_BATCH_SIZE: 10,
@@ -526,13 +527,37 @@ class IsracardAmexBaseScraper extends BaseScraperWithBrowser<ScraperSpecificCred
 
   async login(credentials: ScraperSpecificCredentials): Promise<ScraperScrapingResult> {
     const loginStartTime = performance.now();
+
+    // Bypass Cloudflare WAF: send realistic sec-ch-ua client hints alongside
+    // upstream's headless masking.
+    // See: https://github.com/eshaham/israeli-bank-scrapers/issues/1057
+    const chromeVersion = await this.page
+      .browser()
+      .version()
+      .then(v => {
+        const match = v.match(/Chrome\/(\d+)/);
+        return match ? match[1] : '127';
+      });
+    const secChUa = `"Chromium";v="${chromeVersion}", "Not)A;Brand";v="99", "Google Chrome";v="${chromeVersion}"`;
+
+    const antiWafHeaders: Record<string, string> = {
+      'sec-ch-ua': secChUa,
+      'sec-ch-ua-mobile': '?0',
+      'sec-ch-ua-platform': '"Windows"',
+      'accept-language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
+    };
+
+
     await this.page.setRequestInterception(true);
     this.page.on('request', request => {
       if (request.url().includes('detector-dom.min.js')) {
         debug('force abort for request do download detector-dom.min.js resource');
         void request.abort(undefined, interceptionPriorities.abort);
       } else {
-        void request.continue(undefined, interceptionPriorities.continue);
+        void request.continue(
+          { headers: { ...request.headers(), ...antiWafHeaders } },
+          interceptionPriorities.continue,
+        );
       }
     });
 
