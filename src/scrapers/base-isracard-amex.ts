@@ -20,7 +20,6 @@ import { BaseScraperWithBrowser } from './base-scraper-with-browser';
 import { ScraperErrorTypes } from './errors';
 import { type ScraperOptions, type ScraperScrapingResult } from './interface';
 
-
 const RATE_LIMIT = {
   SLEEP_BETWEEN: 2500, // Sweet spot: 2.5s base delay (randomized up to 3s)
   TRANSACTIONS_BATCH_SIZE: 10,
@@ -546,7 +545,6 @@ class IsracardAmexBaseScraper extends BaseScraperWithBrowser<ScraperSpecificCred
       'sec-ch-ua-platform': '"Windows"',
       'accept-language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
     };
-
 
     await this.page.setRequestInterception(true);
     this.page.on('request', request => {

@@ -20,6 +20,7 @@
     "lint:fix": "eslint src --fix && npm run format",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "prepare": "npm run build:types && npm run build:js",
     "type-check": "tsc --noEmit",
     "dev": "npm run type-check -- --watch",
     "build": "npm run lint && npm run clean && npm run build:types && npm run build:js",
